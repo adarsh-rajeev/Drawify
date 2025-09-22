@@ -1,2 +1,17 @@
-# Drawify
-A universal lucky draw software that takes user-provided data (CSV, Excel, text files, images with names, etc.) and fairly picks a truly random winner
+# 🎲 Drawify
+
+**LuckyPick** is a universal lucky draw tool that finds a **true random winner** from any data source you provide.  
+Just upload your database (CSV, Excel, text, or even images with names), and LuckyPick will process it and select a winner fairly and transparently.
+
+---
+
+## ✨ Features (Planned)
+- 📂 **Supports multiple input formats** – CSV, Excel, text files, images (OCR-based name extraction).
+- 🎲 **True Random Selection** – uses cryptographically secure random number generation.
+- 🖼 **Image Support** – automatically detects and extracts names from pictures.
+- 🧾 **Transparent Logs** – see how the winner was picked.
+- 💻 **Cross-Platform** – works on Windows, Linux, and macOS.
+
+---
+
+## 🚀 Getting Started (Coming Soon
