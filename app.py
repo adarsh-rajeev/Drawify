@@ -1,7 +1,6 @@
 import hashlib
 import io
 import json
-import os
 import random
 import time
 from typing import List, Tuple
@@ -48,21 +47,18 @@ def dataframe_from_upload(file_storage) -> pd.DataFrame:
         raise ValueError("No file provided.")
     filename = file_storage.filename.lower()
     data = file_storage.read()
-    # Reset pointer for safety
     file_storage.stream.seek(0)
 
     try:
         if filename.endswith(".csv"):
             df = pd.read_csv(io.BytesIO(data), dtype=str, keep_default_na=False)
         elif filename.endswith(".xlsx"):
-            # Requires openpyxl
             df = pd.read_excel(io.BytesIO(data), dtype=str, engine="openpyxl")
         else:
             raise ValueError("Unsupported file type. Please upload a .csv or .xlsx file.")
     except Exception as e:
         raise ValueError(f"Failed to parse file: {e}")
 
-    # Ensure column names are strings
     df.columns = [str(c) for c in df.columns]
     return df
 
@@ -76,16 +72,13 @@ def entries_from_dataframe(df: pd.DataFrame, column: str, dedupe: bool) -> Tuple
     if dedupe:
         canon = deduplicate_preserve_order(canon)
 
-    # Deterministic serialization of entries for hashing
     payload = json.dumps(canon, ensure_ascii=False, separators=(",", ":"), sort_keys=False).encode("utf-8")
     dset_hash = sha256_hex(payload)
 
-    return canon, dset_hash, raw_entries[:10]  # sample of raw entries for preview if needed
+    return canon, dset_hash, raw_entries[:10]
 
 
 def get_drand_latest() -> Tuple[int, str]:
-    # Public HTTP API. Example response includes fields like round, randomness, signature, previous_signature, etc.
-    # We only use (round, randomness).
     url = "https://api.drand.sh/public/latest"
     try:
         r = requests.get(url, timeout=10)
@@ -101,7 +94,6 @@ def get_drand_latest() -> Tuple[int, str]:
 
 
 def derive_seed(dataset_hash_hex: str, drand_hex: str) -> bytes:
-    # 32-byte seed
     return hashlib.sha256((dataset_hash_hex + drand_hex).encode("utf-8")).digest()
 
 
@@ -122,13 +114,16 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/draw", methods=["GET"])
+def draw():
+    return render_template("draw.html")
+
+
 @app.route("/api/analyze", methods=["POST"])
 def api_analyze():
     try:
         file = request.files.get("file")
         df = dataframe_from_upload(file)
-
-        # Prepare a light preview; avoid sending huge payloads
         preview_rows = 10
         preview = df.head(preview_rows).to_dict(orient="records")
         return jsonify({
@@ -156,7 +151,6 @@ def api_draw():
             k = int(k_str)
         except ValueError:
             raise ValueError("Number of winners (k) must be an integer.")
-
         if k <= 0:
             raise ValueError("Number of winners (k) must be greater than 0.")
 
@@ -175,7 +169,6 @@ def api_draw():
         seed = derive_seed(dataset_hash_hex, drand_hex)
         rng = random.Random(int.from_bytes(seed, "big"))
 
-        # Fisher–Yates shuffle and choose first k
         order = fisher_yates_shuffle(n, rng)
         winner_indices = order[:k]
         winners = [entries[i] for i in winner_indices]
@@ -190,10 +183,7 @@ def api_draw():
             "k": k,
             "winner_indices": winner_indices,
             "winners": winners,
-            "parameters": {
-                "column": column,
-                "dedupe": dedupe
-            },
+            "parameters": {"column": column, "dedupe": dedupe},
             "algorithm": "Fisher–Yates, RNG seed = sha256(dataset_hash || drand_randomness_hex)",
             "app": "Fair Lucky Draw Flask App",
             "version": "0.1.0"
@@ -206,4 +196,4 @@ def api_draw():
 
 if __name__ == "__main__":
     # For local dev; in production use a WSGI server.
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="127.0.0.1", port=5000, debug=True)

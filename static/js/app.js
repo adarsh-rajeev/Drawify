@@ -23,25 +23,44 @@
   const downloadReceiptBtn = document.getElementById("download-receipt-btn");
 
   let currentFile = null;
-  let lastAnalyze = null; // store columns, preview, row_count
 
-  // Helpers
-  function show(el) { el.classList.remove("hidden"); }
-  function hide(el) { el.classList.add("hidden"); }
-  function setText(el, text) { el.textContent = text; }
+  function show(el) {
+    el.classList.remove("hidden");
+  }
+  function hide(el) {
+    el.classList.add("hidden");
+  }
+  function setText(el, text) {
+    el.textContent = text;
+  }
   function htmlEscape(s) {
-    return s == null ? "" : String(s).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+    return s == null
+      ? ""
+      : String(s).replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            }[m])
+        );
   }
 
   function renderPreviewTable(preview) {
     if (!preview || preview.length === 0) {
-      previewTable.innerHTML = '<tbody><tr><td class="p-2 text-gray-500">No preview available.</td></tr></tbody>';
+      previewTable.innerHTML =
+        '<tbody><tr><td class="p-2 text-gray-500">No preview available.</td></tr></tbody>';
       return;
     }
     const columns = Object.keys(preview[0]);
     let thead = '<thead class="bg-gray-50"><tr>';
     for (const c of columns) {
-      thead += `<th class="px-3 py-2 text-left font-semibold text-gray-700">${htmlEscape(c)}</th>`;
+      thead += `<th class="px-3 py-2 text-left font-semibold text-gray-700">${htmlEscape(
+        c
+      )}</th>`;
     }
     thead += "</tr></thead>";
 
@@ -49,7 +68,9 @@
     for (const row of preview) {
       tbody += "<tr>";
       for (const c of columns) {
-        tbody += `<td class="px-3 py-2 whitespace-nowrap text-gray-800">${htmlEscape(row[c])}</td>`;
+        tbody += `<td class="px-3 py-2 whitespace-nowrap text-gray-800">${htmlEscape(
+          row[c]
+        )}</td>`;
       }
       tbody += "</tr>";
     }
@@ -64,21 +85,9 @@
     const end = Date.now() + duration;
 
     (function frame() {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-      });
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 } });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
     })();
   }
 
@@ -94,7 +103,7 @@
     form.append("file", file);
 
     fetch("/api/analyze", { method: "POST", body: form })
-      .then(r => r.json().then(j => ({ ok: r.ok, json: j })))
+      .then((r) => r.json().then((j) => ({ ok: r.ok, json: j })))
       .then(({ ok, json }) => {
         hide(analyzeProgress);
         if (!ok || !json.ok) {
@@ -103,16 +112,16 @@
           return;
         }
 
-        lastAnalyze = json;
         // Populate columns
         columnSelect.innerHTML = "";
-        for (const c of json.columns) {
+        (json.columns || []).forEach((c) => {
           const opt = document.createElement("option");
           opt.value = c;
           opt.textContent = c;
           columnSelect.appendChild(opt);
-        }
-        // Sensible defaults
+        });
+
+        // Defaults
         kInput.value = 1;
         dedupeToggle.checked = true;
 
@@ -121,7 +130,7 @@
 
         show(analyzeResult);
       })
-      .catch(err => {
+      .catch((err) => {
         hide(analyzeProgress);
         setText(analyzeError, `Error: ${err}`);
         show(analyzeError);
@@ -131,9 +140,7 @@
   function handleFileSelection(file) {
     currentFile = file;
     setText(fileNameEl, file ? `Selected file: ${file.name}` : "");
-    if (file) {
-      analyzeFile(file);
-    }
+    if (file) analyzeFile(file);
   }
 
   // Drag and drop handlers
@@ -158,7 +165,7 @@
   });
 
   // Draw
-  drawBtn.addEventListener("click", () => {
+  document.getElementById("draw-btn").addEventListener("click", () => {
     hide(drawError);
     if (!currentFile) {
       setText(drawError, "Please upload a CSV or XLSX file first.");
@@ -180,7 +187,7 @@
     show(drawProgress);
 
     fetch("/api/draw", { method: "POST", body: form })
-      .then(r => r.json().then(j => ({ ok: r.ok, json: j })))
+      .then((r) => r.json().then((j) => ({ ok: r.ok, json: j })))
       .then(({ ok, json }) => {
         hide(drawProgress);
         if (!ok || !json.ok) {
@@ -189,7 +196,6 @@
           return;
         }
 
-        // Render winners
         const winners = json.winners || [];
         if (winners.length > 0) fireConfetti();
 
@@ -202,19 +208,18 @@
         } else {
           html = `<ol class="list-decimal list-inside space-y-1">`;
           winners.forEach((w, i) => {
-            html += `<li class="text-gray-900"><span class="font-semibold">#${i+1}:</span> ${htmlEscape(w)}</li>`;
+            html += `<li class="text-gray-900"><span class="font-semibold">#${
+              i + 1
+            }:</span> ${htmlEscape(w)}</li>`;
           });
           html += `</ol>`;
         }
         winnersList.innerHTML = html;
 
-        // Receipt
         receiptJson.textContent = JSON.stringify(json.receipt, null, 2);
-
-        // Show results
         show(resultsSection);
       })
-      .catch(err => {
+      .catch((err) => {
         hide(drawProgress);
         setText(drawError, `Error: ${err}`);
         show(drawError);

@@ -1,127 +1,275 @@
-<!doctype html>
-<html lang="en" class="h-full bg-gray-50">
-<head>
-  <meta charset="utf-8">
-  <title>Fair Lucky Draw</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <!-- Tailwind CSS (CDN for MVP) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Inter font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
-  <!-- Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-</head>
-<body class="h-full font-inter">
-  <div class="min-h-full">
-    <header class="bg-white shadow">
-      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-2xl font-bold tracking-tight text-gray-900">Fair Lucky Draw</h1>
-        <p class="text-gray-600">CSV/Excel input, drand-powered randomness, reproducible results.</p>
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fair Lucky Draw — Verifiable, Transparent, Beautiful</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Run a fair, verifiable lucky draw from CSV/Excel with public randomness (drand), reproducible seeds, and a modern UI."
+    />
+    <meta property="og:title" content="Fair Lucky Draw" />
+    <meta
+      property="og:description"
+      content="Verifiable lucky draws powered by drand and reproducible Fisher–Yates shuffle."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="/" />
+    <link
+      rel="icon"
+      href="{{ url_for('static', filename='img/logo.svg') }}"
+      type="image/svg+xml"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial;
+      }
+      .bg-grid {
+        background-image: radial-gradient(
+          rgba(255, 255, 255, 0.15) 1px,
+          transparent 1px
+        );
+        background-size: 24px 24px;
+        background-position: -10px -10px;
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen bg-gradient-to-b from-indigo-600 via-indigo-700 to-violet-700 text-white"
+  >
+    <header class="sticky top-0 bg-transparent">
+      <div
+        class="relative z-10 max-w-6xl mx-auto px-6 py-5 flex items-center justify-between"
+      >
+        <a href="{{ url_for('index') }}" class="flex items-center gap-2">
+          <img
+            src="{{ url_for('static', filename='img/logo.svg') }}"
+            alt="logo"
+            class="h-7 w-7"
+          />
+          <span class="font-semibold">Fair Lucky Draw</span>
+        </a>
+        <nav class="hidden sm:flex items-center gap-6 text-sm">
+          <a href="#features" class="hover:opacity-80">Features</a>
+          <a href="#how" class="hover:opacity-80">How it works</a>
+          <a href="#faq" class="hover:opacity-80">FAQ</a>
+          <a
+            href="{{ url_for('draw') }}"
+            class="px-3 py-1.5 rounded-md bg-white text-indigo-700 font-semibold hover:bg-indigo-50"
+            >Get started</a
+          >
+        </nav>
+        <a
+          href="{{ url_for('draw') }}"
+          class="sm:hidden px-3 py-1.5 rounded-md bg-white text-indigo-700 font-semibold"
+          >Start</a
+        >
       </div>
     </header>
 
-    <main>
-      <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Upload Section -->
-        <section class="bg-white shadow rounded-lg p-6">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">1) Upload your CSV/XLSX</h2>
+    <section class="relative overflow-clip">
+      <div
+        class="absolute inset-0 bg-grid opacity-30 pointer-events-none z-0"
+      ></div>
 
-          <div id="dropzone"
-               class="flex justify-center rounded-lg border border-dashed border-gray-300 px-6 py-12 hover:border-indigo-400 transition cursor-pointer bg-gray-50"
-               tabindex="0">
-            <div class="text-center">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24"
-                   stroke="currentColor" stroke-width="1.5" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              <div class="mt-4 flex text-sm leading-6 text-gray-600">
-                <label for="file-input" class="relative cursor-pointer rounded-md bg-white font-semibold text-indigo-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-indigo-600 focus-within:ring-offset-2 hover:text-indigo-500">
-                  <span>Upload a file</span>
-                  <input id="file-input" name="file-input" type="file" class="sr-only" accept=".csv,.xlsx">
-                </label>
-                <p class="pl-1">or drag and drop</p>
-              </div>
-              <p class="text-xs leading-5 text-gray-500">CSV or XLSX up to ~10MB</p>
-              <p id="file-name" class="text-sm text-gray-700 mt-2"></p>
+      <div
+        class="relative z-10 max-w-6xl mx-auto px-6 pt-16 pb-10 sm:pt-24 sm:pb-16"
+      >
+        <div class="grid md:grid-cols-2 gap-10 items-center">
+          <div>
+            <h1 class="text-4xl sm:text-5xl font-extrabold leading-tight">
+              Fair, transparent lucky draws — with proof.
+            </h1>
+            <p class="mt-5 text-indigo-100 text-lg">
+              Upload CSV/Excel, pick a column, and draw winners using public
+              randomness from drand. Your results are reproducible and
+              verifiable with a downloadable receipt.
+            </p>
+            <div class="mt-8 flex items-center gap-3">
+              <a
+                href="{{ url_for('draw') }}"
+                class="inline-flex items-center rounded-md bg-white text-indigo-700 px-5 py-3 font-semibold shadow hover:bg-indigo-50"
+                >Get started</a
+              >
+              <a
+                href="#features"
+                class="inline-flex items-center rounded-md ring-1 ring-white/50 px-5 py-3 font-semibold hover:bg-white/10"
+                >Learn more</a
+              >
+            </div>
+            <div class="mt-6 text-sm text-indigo-100/90">
+              No signup • Runs locally • Downloadable audit receipt
             </div>
           </div>
-
-          <div id="analyze-progress" class="hidden mt-4 text-indigo-600 text-sm">Analyzing file...</div>
-          <div id="analyze-error" class="hidden mt-4 text-red-600 text-sm"></div>
-
-          <div id="analyze-result" class="hidden mt-6 space-y-6">
-            <!-- Column picker and options -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-              <div>
-                <label for="column-select" class="block text-sm font-medium text-gray-700">Participant ID column</label>
-                <select id="column-select" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </select>
-              </div>
-              <div>
-                <label for="k-input" class="block text-sm font-medium text-gray-700">Number of winners</label>
-                <input type="number" min="1" value="1" id="k-input"
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" />
-              </div>
-              <div class="flex items-center">
-                <input id="dedupe-toggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-                <label for="dedupe-toggle" class="ml-2 text-sm text-gray-700">Remove duplicates</label>
-              </div>
-            </div>
-
-            <div class="text-sm text-gray-600">
-              <span id="row-count"></span>
-            </div>
-
-            <!-- Preview table -->
-            <div>
-              <h3 class="text-sm font-medium text-gray-900 mb-2">Preview (first 10 rows)</h3>
-              <div class="overflow-auto border rounded-md">
-                <table id="preview-table" class="min-w-full divide-y divide-gray-200 text-sm"></table>
-              </div>
-            </div>
-
-            <!-- Draw Button -->
-            <div class="flex items-center gap-3">
-              <button id="draw-btn"
-                      class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-600">
-                Draw Winners
-              </button>
-              <div id="draw-progress" class="hidden text-indigo-600 text-sm">Drawing...</div>
-              <div id="draw-error" class="hidden text-red-600 text-sm"></div>
+          <div class="relative">
+            <div
+              class="absolute -inset-6 bg-white/10 blur-3xl rounded-3xl pointer-events-none"
+            ></div>
+            <div
+              class="relative rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-4"
+            >
+              <img
+                src="{{ url_for('static', filename='img/hero-illustration.svg') }}"
+                alt="Illustration"
+                class="w-full h-auto"
+              />
             </div>
           </div>
-        </section>
-
-        <!-- Results -->
-        <section id="results-section" class="hidden bg-white shadow rounded-lg p-6 mt-8">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">2) Results</h2>
-          <div id="winners-list" class="mb-4"></div>
-
-          <details class="group border rounded-md p-4">
-            <summary class="cursor-pointer font-semibold text-gray-800">Receipt (verifiable)</summary>
-            <pre id="receipt-json" class="mt-3 text-xs bg-gray-50 p-3 rounded overflow-auto"></pre>
-          </details>
-
-          <button id="download-receipt-btn"
-                  class="mt-4 inline-flex items-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-600">
-            Download Receipt JSON
-          </button>
-        </section>
+        </div>
       </div>
-    </main>
+    </section>
 
-    <footer class="mt-10 py-8 text-center text-xs text-gray-500">
-      <p>Randomness via <a class="text-indigo-600 hover:underline" href="https://drand.love/" target="_blank" rel="noopener">drand</a>. Built for fairness and reproducibility.</p>
+    <section class="py-6">
+      <div class="max-w-6xl mx-auto px-6 opacity-90">
+        <p class="text-indigo-100/80 text-sm">Powered by</p>
+        <div class="mt-2 flex items-center gap-6 opacity-90">
+          <span class="text-white/90 font-semibold">pandas</span>
+          <span class="text-white/90 font-semibold">Flask</span>
+          <span class="text-white/90 font-semibold">drand</span>
+          <span class="text-white/90 font-semibold">Tailwind</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="py-16 sm:py-20 bg-white text-gray-900">
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold tracking-tight">
+          Everything you need for a fair draw
+        </h2>
+        <p class="mt-2 text-gray-600">
+          Uniform selection, public randomness, and a delightful UX.
+        </p>
+
+        <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">CSV & Excel</h3>
+            <p class="mt-2 text-gray-600">
+              Upload your .csv or .xlsx files. Choose the column with
+              participant IDs.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">Dedup toggle</h3>
+            <p class="mt-2 text-gray-600">
+              Optionally remove duplicate entries while preserving order.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">Multiple winners</h3>
+            <p class="mt-2 text-gray-600">
+              Pick any number of winners with uniform, unbiased selection.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">drand randomness</h3>
+            <p class="mt-2 text-gray-600">
+              Unpredictable public randomness ensures fairness.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">Reproducible results</h3>
+            <p class="mt-2 text-gray-600">
+              Seed derived from dataset hash + drand; anyone can verify.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-gray-50">
+            <h3 class="font-semibold">Modern UI</h3>
+            <p class="mt-2 text-gray-600">
+              Drag-and-drop upload, confetti celebration, clean design.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section
+      id="how"
+      class="py-16 sm:py-20 bg-gradient-to-b from-white to-indigo-50 text-gray-900"
+    >
+      <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-3xl font-bold tracking-tight">How it works</h2>
+        <div class="mt-8 grid md:grid-cols-3 gap-6">
+          <div class="rounded-xl border p-6 bg-white">
+            <span class="text-xs font-semibold text-indigo-600 uppercase"
+              >Step 1</span
+            >
+            <h3 class="mt-2 font-semibold">Prepare your file</h3>
+            <p class="mt-2 text-gray-600">
+              CSV/XLSX with a participant ID column (e.g., email or name).
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-white">
+            <span class="text-xs font-semibold text-indigo-600 uppercase"
+              >Step 2</span
+            >
+            <h3 class="mt-2 font-semibold">Configure & draw</h3>
+            <p class="mt-2 text-gray-600">
+              Pick the column, number of winners, and toggle deduplication.
+            </p>
+          </div>
+          <div class="rounded-xl border p-6 bg-white">
+            <span class="text-xs font-semibold text-indigo-600 uppercase"
+              >Step 3</span
+            >
+            <h3 class="mt-2 font-semibold">Verify with receipt</h3>
+            <p class="mt-2 text-gray-600">
+              Get a JSON receipt containing dataset hash, drand round, and
+              results.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-10">
+          <a
+            href="{{ url_for('draw') }}"
+            class="inline-flex items-center rounded-md bg-indigo-600 text-white px-6 py-3 font-semibold shadow hover:bg-indigo-500"
+            >Start a draw</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="py-16 sm:py-20 bg-white text-gray-900">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-3xl font-bold tracking-tight">FAQ</h2>
+        <div class="mt-8 space-y-6">
+          <div>
+            <h3 class="font-semibold">Is it really fair?</h3>
+            <p class="mt-1 text-gray-600">
+              Yes. We use public randomness from drand and derive a seed from
+              your dataset hash and the drand value. The Fisher–Yates shuffle
+              ensures uniform selection.
+            </p>
+          </div>
+          <div>
+            <h3 class="font-semibold">Do you store my data?</h3>
+            <p class="mt-1 text-gray-600">
+              No data is stored by default when you run locally. You can keep
+              the receipt JSON if you want an audit trail.
+            </p>
+          </div>
+          <div>
+            <h3 class="font-semibold">Can I reproduce a draw?</h3>
+            <p class="mt-1 text-gray-600">
+              Yes. Using the same dataset, settings, and drand round from the
+              receipt, you can reproduce the winners.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="py-10 text-center text-sm text-white/80 bg-indigo-700">
+      <div class="max-w-6xl mx-auto px-6">
+        <p>Fair Lucky Draw — built with Flask, pandas, and drand.</p>
+        <p class="mt-1">© <span id="year"></span> All rights reserved.</p>
+      </div>
     </footer>
-  </div>
 
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-</body>
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+  </body>
 </html>
